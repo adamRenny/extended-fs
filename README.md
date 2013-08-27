@@ -36,3 +36,11 @@ Asynchronous recursive directory copy. Copies all files found at the `src` direc
 ## `extended-fs.copyDirSync(src, dest, callback)`
 
 Synchronous recursive directory copy.
+
+## `extended-fs.mkdirp(dir, mode, callback)`
+
+See [mkdirp](https://github.com/substack/node-mkdirp#mkdirpdir-mode-cb).
+
+## `extended-fs.mkdirpSync(dir, mode)`
+
+See [mkdirp.sync](https://github.com/substack/node-mkdirp#mkdirpsyncdir-mode).

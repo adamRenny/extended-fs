@@ -25,9 +25,14 @@
 
 var fs = require('graceful-fs');
 var path = require('path');
+var mkdirp = require('mkdirp');
 var q = require('q');
 
 var fsExtended = {
+    mkdirp: mkdirp,
+    
+    mkdirpSync: mkdirp.sync,
+
     copyFile: function(src, dest, callback) {
         fs.readFile(src, function(error, data) {
             if (error) {

@@ -8,7 +8,8 @@
     
     "dependencies": {
         "q": "0.9.x",
-        "graceful-fs": "2.x.x"
+        "graceful-fs": "2.x.x",
+        "mkdirp": "*"
     },
 
     "devDependencies": {

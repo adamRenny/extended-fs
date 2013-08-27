@@ -75,11 +75,11 @@ suite('fs', function() {
         return true;
     }
 
-    test('extended-fs is not be native fs', function() {
+    test('is not be native fs', function() {
         assert(fs !== require('fs'));
     });
 
-    test('extended-fs has the same values for every property that has a matching key in fs', function() {
+    test('has the same values for every property that has a matching key in fs', function() {
         var key;
         var nfs = require('fs');
         for (key in nfs) {
@@ -89,7 +89,7 @@ suite('fs', function() {
         }
     });
 
-    test('fs copies a file synchronously', function() {
+    test('copies a file synchronously', function() {
         var original = path.join(dir, 'a', '0');
 
         fs.copyFileSync(original, copiedFilename);
@@ -99,7 +99,7 @@ suite('fs', function() {
         fs.unlinkSync(copiedFilename);
     });
 
-    test('fs copies a file asynchronously', function(done) {
+    test('copies a file asynchronously', function(done) {
         var original = path.join(dir, 'a', '0');
 
         fs.copyFile(original, copiedFilename, function(error) {
@@ -133,7 +133,7 @@ suite('fs', function() {
         fs.unlinkSync(copiedFilename);
     });
 
-    test('fs copies a directory synchronously', function() {
+    test('copies a directory synchronously', function() {
         fs.copyDirSync(dir, copiedDirectory);
 
         assert(fs.existsSync(copiedDirectory), 'Copied directory exists');
@@ -141,14 +141,14 @@ suite('fs', function() {
         assert(directoryIsSameAsDirectory(dir, copiedDirectory), 'Directories are unequal');
     });
 
-    test('fs removes a directory synchronously', function() {
+    test('removes a directory synchronously', function() {
         fs.copyDirSync(dir, copiedDirectory);
         fs.rmDirSync(copiedDirectory);
 
         assert(!fs.existsSync(copiedDirectory), 'Copied directory no longer exists');
     });
 
-    test('fs removes a directory asynchronously', function(done) {
+    test('removes a directory asynchronously', function(done) {
         fs.copyDirSync(dir, copiedDirectory);
         fs.rmDir(copiedDirectory, function() {
             assert(!fs.existsSync(copiedDirectory), 'Copied directory no longer exists');
@@ -157,7 +157,7 @@ suite('fs', function() {
         });
     });
 
-    test('fs copies a directory asynchronously', function(done) {
+    test('copies a directory asynchronously', function(done) {
         fs.copyDir(dir, copiedDirectory, function(error) {
             assert(!error, 'An error occurred ' + error);
 
@@ -171,7 +171,7 @@ suite('fs', function() {
         });
     });
 
-    test('fs throws an error when trying to synchronously copy a file that doesn\'t exist', function() {
+    test('throws an error when trying to synchronously copy a file that doesn\'t exist', function() {
         var anErrorHasOccurred = false;
         try {
             fs.copyFileSync('./nonExistentFile', copiedFilename);
@@ -182,7 +182,7 @@ suite('fs', function() {
         assert(anErrorHasOccurred, 'copyFileSync threw no error');
     });
 
-    test('fs throws an error when trying to asynchronously copy a file that doesn\'t exist', function(done) {
+    test('throws an error when trying to asynchronously copy a file that doesn\'t exist', function(done) {
         fs.copyFile('./nonExistentFile', copiedFilename, function(error) {
             assert(error, 'copyFile threw no error');
 
@@ -190,7 +190,7 @@ suite('fs', function() {
         });
     });
 
-    test('fs throws an error when trying to synchronously copy a directory that doesn\'t exist', function() {
+    test('throws an error when trying to synchronously copy a directory that doesn\'t exist', function() {
         var anErrorHasOccurred = false;
         try {
             fs.copyDirSync('./nonExistentDirectory', copiedDirectory);
@@ -201,7 +201,7 @@ suite('fs', function() {
         assert(anErrorHasOccurred, 'copyDirSync threw no error');
     });
 
-    test('fs throws an error when trying to asynchronously copy a directory that doesn\'t exist', function(done) {
+    test('throws an error when trying to asynchronously copy a directory that doesn\'t exist', function(done) {
         fs.copyDir('./nonExistentDirectory', copiedDirectory, function(error) {
             assert(error, 'copyFile threw no error');
 
@@ -209,7 +209,7 @@ suite('fs', function() {
         });
     });
 
-    test('fs throws an error when trying to synchronously recursively remove a directory that doesn\'t exist', function() {
+    test('throws an error when trying to synchronously recursively remove a directory that doesn\'t exist', function() {
         var anErrorHasOccurred = false;
         try {
             fs.rmDirSync(copiedDirectory);
@@ -220,9 +220,29 @@ suite('fs', function() {
         assert(anErrorHasOccurred, 'rmDirSync threw no error');
     });
 
-    test('fs throws an error when trying to asynchronously recursively remove a directory that doesn\'t exist', function(done) {
+    test('throws an error when trying to asynchronously recursively remove a directory that doesn\'t exist', function(done) {
         fs.rmDir(copiedDirectory, function(error) {
             assert(error, 'rmDir threw no error');
+
+            done();
+        });
+    });
+
+    test('synchronously mkdir recursively', function() {
+        var targetDir = path.join(root, 'a', 'b', 'c', 'd', 'e', 'f');
+        fs.mkdirpSync(targetDir);
+
+        assert(fs.statSync(targetDir).isDirectory());
+
+        fs.rmDirSync(path.join(root, 'a'));
+    });
+
+    test('asynchronously mkdir recursively', function(done) {
+        var targetDir = path.join(root, 'a', 'b', 'c', 'd', 'e', 'f');
+        fs.mkdirp(targetDir, function(error) {
+            assert(fs.statSync(targetDir).isDirectory());
+
+            fs.rmDirSync(path.join(root, 'a'));
 
             done();
         });
