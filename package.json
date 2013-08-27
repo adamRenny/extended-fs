@@ -2,7 +2,7 @@
     "name": "extended-fs",
     "description": "Extended functionality of fs with additional q-dependent promises adaptation of fs functions",
 
-    "version": "0.1.0",
+    "version": "0.2.1",
 
     "author": "Adam Ranfelt <adamRenny@gmail.com>",
     
