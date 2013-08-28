@@ -2,9 +2,14 @@
     "name": "extended-fs",
     "description": "Extended functionality of fs with additional q-dependent promises adaptation of fs functions",
 
-    "version": "0.2.1",
+    "version": "0.3.0",
 
     "author": "Adam Ranfelt <adamRenny@gmail.com>",
+    
+    "license": {
+        "type": "MIT",
+        "url": "https://raw.github.com/adamRenny/extended-fs/master/LICENSE"
+    },
     
     "dependencies": {
         "q": "0.9.x",

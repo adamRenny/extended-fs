@@ -28,11 +28,131 @@ var path = require('path');
 var mkdirp = require('mkdirp');
 var q = require('q');
 
+/**
+ * Extended form of fs to augment features that would be nice to have
+ * Includes sync and async form of all augmented features
+ * Includes the following operations:
+ *   - copy
+ *   - recursive remove
+ *   - recursive make directory
+ *
+ * @namespace fsExtended
+ */
 var fsExtended = {
+
+    /**
+     * Walks through a directory asynchronously starting with the directory provided
+     * Passes the filename and its stats back to the operation
+     *
+     * @method recurse
+     * @param {string} dir Directory to traverse
+     * @param {function} operation Operation to perform on each file
+     * @param {function} callback Callback that accepts an error as the first param
+     */
+    recurse: function(dir, operation, callback) {
+        fs.readdir(dir, function(error, files) {
+            if (error) {
+                callback(error);
+                return;
+            }
+
+            var i = 0;
+            var length = files.length;
+            var counter = 1;
+            var file;
+
+            for (; i < length; i++) {
+                // Capture scope
+                (function(file) {
+
+                    counter++;
+                    fs.stat(file, function(error, stats) {
+                        if (error) {
+                            callback(error);
+                            return;
+                        }
+
+                        operation(file, stats);
+
+                        if (stats.isDirectory()) {
+                            fsExtended.recurse(file, operation, onRecurseComplete);
+                        } else {
+                            onRecurseComplete(null);
+                        }
+                    });
+                }(path.join(dir, files[i])));
+            }
+
+            onRecurseComplete(null);
+
+            function onRecurseComplete(error) {
+                if (error) {
+                    callback(error, false);
+                    return;
+                }
+
+                counter--;
+                if (counter === 0) {
+                    callback(null, true);
+                }
+            }
+        });
+    },
+
+    /**
+     * Walks through a directory synchronously starting with the directory provided
+     * Passes the filename and its stats back to the operation
+     *
+     * @method recurseSync
+     * @param {string} dir Directory to traverse
+     * @param {function} operation Operation to perform on each file
+     */
+    recurseSync: function(dir, operation) {
+        var files = fs.readdirSync(dir);
+
+        var i = 0;
+        var length = files.length;
+        var file;
+        var stats;
+
+        for (; i < length; i++) {
+            file = path.join(dir, files[i]);
+            stats = fs.statSync(file);
+
+            operation(file, stats);
+
+            if (stats.isDirectory()) {
+                fsExtended.recurseSync(file, operation);
+            }
+        }
+    },
+
+    /**
+     * Asynchronous recursive mkdir, mkdir -p
+     *
+     * @method mkdirp
+     * @see https://github.com/substack/node-mkdirp#mkdirpdir-mode-cb
+     */
     mkdirp: mkdirp,
     
+    /**
+     * Synchronous recursive mkdir, mkdir -p
+     *
+     * @method mkdirpSync
+     * @see https://github.com/substack/node-mkdirp#mkdirpsyncdir-mode
+     */
     mkdirpSync: mkdirp.sync,
 
+    /**
+     * Copies a file asynchronously from the source to the destination
+     * Passes any errors back to the callback
+     * Does not copy directories
+     *
+     * @method copyFile
+     * @param {string} src Source File
+     * @param {string} dest Destination File
+     * @param {function} callback Callback that accepts an error as the first param
+     */
     copyFile: function(src, dest, callback) {
         fs.readFile(src, function(error, data) {
             if (error) {
@@ -48,6 +168,14 @@ var fsExtended = {
         });
     },
 
+    /**
+     * Copies a file synchronously from the source to the destination
+     * @see fsExtended#copyFile
+     *
+     * @method copyFileSync
+     * @param {string} src Source File
+     * @param {string} dest Destination File
+     */
     copyFileSync: function(src, dest) {
 
         var readContent = fs.readFileSync(src);
@@ -59,6 +187,14 @@ var fsExtended = {
         fs.writeFileSync(dest, readContent);
     },
 
+    /**
+     * Asynchronously removes a directory and deletes all children nodes
+     * Passes any error back to the callback
+     *
+     * @method rmDir
+     * @param {string} dir Directory to remove recursively
+     * @param {function} callback Callback that accepts an error as the first param
+     */
     rmDir: function(dir, callback) {
         fs.exists(dir, function(exists) {
             if (!exists) {
@@ -79,13 +215,13 @@ var fsExtended = {
                     (function(dir, file) {
                         var filepath = path.join(dir, file);
 
+                        counter++;
                         fs.stat(filepath, function(error, stats) {
                             if (error) {
                                 callback(error);
                                 return;
                             }
 
-                            counter++;
                             if (stats.isDirectory()) {
                                 fsExtended.rmDir(filepath, onRemoveComplete);
                             } else {
@@ -93,6 +229,11 @@ var fsExtended = {
                             }
                         });
                     }(dir, files[i]));
+                }
+
+                // If nothing has been read, remove the directory
+                if (counter === 1) {
+                    fs.rmdir(dir, onRemoveComplete);
                 }
 
                 function onRemoveComplete(error) {
@@ -114,6 +255,13 @@ var fsExtended = {
         });
     },
 
+    /**
+     * Synchronously removes a directory and deletes all children nodes
+     * Passes any error back to the callback
+     *
+     * @method rmDirSync
+     * @param {string} dir Directory to remove recursively
+     */
     rmDirSync: function(dir) {
         if (!fs.existsSync(dir)) {
             throw new TypeError(dir + ' does not exist');
@@ -149,6 +297,15 @@ var fsExtended = {
         return null;
     },
 
+    /**
+     * Asynchronously copies a directory and all of its contents into a new directory
+     * Passes any error back to the callback
+     *
+     * @method copyDir
+     * @param {string} src Directory to copy recursively
+     * @param {string} dest Target directory to copy to recursively
+     * @param {function} callback Callback that accepts an error as the first param
+     */
     copyDir: function(src, dest, callback) {
         fs.exists(src, function(exists) {
             if (!exists) {
@@ -197,13 +354,13 @@ var fsExtended = {
                                     var srcpath = path.join(src, file);
                                     var destpath = path.join(dest, file);
 
+                                    counter++;
                                     fs.stat(srcpath, function(error, stats) {
                                         if (error) {
                                             callback(error);
                                             return;
                                         }
 
-                                        counter++;
                                         if (stats.isDirectory()) {
                                             fsExtended.copyDir(srcpath, destpath, onCopyComplete);
                                         } else {
@@ -211,6 +368,11 @@ var fsExtended = {
                                         }
                                     });
                                 }(src, dest, files[i]));
+                            }
+
+                            // Perform the callback if none have been copied
+                            if (counter === 0) {
+                                callback(null, true);
                             }
 
                             function onCopyComplete(error) {
@@ -231,7 +393,14 @@ var fsExtended = {
         });
     },
 
-    // Will not work for a number of files that exceeds the maximum kernel amount
+    /**
+     * Synchronously copies a directory and all of its contents into a new directory
+     * Passes any error back to the callback
+     *
+     * @method copyDirSync
+     * @param {string} src Directory to copy recursively
+     * @param {string} dest Target directory to copy to recursively
+     */
     copyDirSync: function(src, dest) {
         var error = null;
         if (!fs.existsSync(src)) {
@@ -286,7 +455,11 @@ var fsExtended = {
         return null;
     }
 };
-// Generate any promise-based versions of methods within fs 
+
+/**
+ * Generates and produces a set of promse suffixed methods to provide a promise based API
+ * Ignores any underscore prefixed, object constructor, sync, or marked invalid methods for conversion
+ */
 (function() {
 
     var funcName;
@@ -305,7 +478,6 @@ var fsExtended = {
     ];
 
     for (funcName in fsExtended) {
-        // _private, upperCase
         if (funcName.charAt(0) === '_'
             || funcName.charAt(0) === funcName.charAt(0).toUpperCase()
             || funcName.toLowerCase().indexOf('sync') !== -1
@@ -331,12 +503,32 @@ var fsExtended = {
         fsExtended[funcName + 'Promise'] = generatePromiseFromNode(funcName, fs[funcName]);
     }
 
+    /**
+     * Generates a promise API driven function for the provided method
+     * Routes the function to be considered an exception and use a different internal API
+     *
+     * @method generatePromiseFromNode
+     * @param {string} methodName Name of the method passed in
+     * @param {function} method Function that should be converted
+     * @return {function}
+     */
     function generatePromiseFromNode(methodName, method) {
         var isException = methodExceptions.indexOf(methodName) !== -1;
 
         return makePromiseFromNode(methodName, method, isException);
     }
 
+    /**
+     * Generates a promise API driven function for the provided method
+     * Exceptional methods will always resolve their promises
+     * Standard node methods will resolve or reject depending on whether or not it has an error
+     *
+     * @method generatePromiseFromNode
+     * @param {string} methodName Name of the method passed in
+     * @param {function} method Function that should be converted
+     * @param {boolean} isException Flag for whether or not it is an exception
+     * @return {function}
+     */
     function makePromiseFromNode(methodName, method, isException) {
         var promiseFunction = function() {
             var defer = q.defer();
@@ -368,7 +560,6 @@ var fsExtended = {
 
         return promiseFunction;
     }
-
 }());
 
 module.exports = fsExtended;

@@ -75,6 +75,27 @@ suite('fs', function() {
         return true;
     }
 
+    function getAllFilesInDirectory(dir) {
+        var files = fs.readdirSync(dir);
+
+        var i = 0;
+        var length = files.length;
+        var filepath;
+        var stats;
+        var subfiles;
+        for (; i < length; i++) {
+            files[i] = filepath = path.join(dir, files[i]);
+            stats = fs.statSync(filepath);
+
+            if (stats.isDirectory()) {
+                subfiles = getAllFilesInDirectory(filepath);
+                Array.prototype.push.apply(files, subfiles);
+            }
+        }
+
+        return files;
+    }
+
     test('is not be native fs', function() {
         assert(fs !== require('fs'));
     });
@@ -246,5 +267,88 @@ suite('fs', function() {
 
             done();
         });
+    });
+
+    test('asynchronously recurses through all files of a directory', function(done) {
+        var files = getAllFilesInDirectory(dir);
+        var rFiles = [];
+
+        fs.recurse(dir, function(file, stats) {
+            rFiles.push(file);
+        }, function(error) {
+            assert(!error, 'Recurse produces an error ' + error);
+
+            assert(rFiles.length === files.length, 'Recursive file count is unequal');
+            var i = 0;
+            var length = files.length;
+            for (; i < length; i++) {
+                assert(rFiles.indexOf(files[i]) !== -1, 'File not discovered via recursion ' + files[i]);
+            }
+
+            done();
+        });
+    });
+
+    test('asynchronously recurses through a directory with no files', function(done) {
+        fs.recurse(path.join(root, 'empty'), function(file, stats) {
+
+        }, function(error) {
+            assert(!error, 'Recurse produces an error ' + error);
+
+            done();
+        });
+    });
+
+    test('asynchronously copies a directory with no files', function(done) {
+        fs.copyDir(path.join(root, 'empty'), copiedDirectory, function(error) {
+            assert(fs.existsSync(copiedDirectory), 'Copied directory does not exist');
+
+            fs.rmDirSync(copiedDirectory);
+
+            done();
+        });
+    });
+
+    test('synchronously copies a directory with no files', function() {
+        fs.copyDirSync(path.join(root, 'empty'), copiedDirectory);
+        assert(fs.existsSync(copiedDirectory), 'Copied directory does not exist');
+
+        fs.rmDirSync(copiedDirectory);
+    });
+
+    test('asynchronously removes a directory with no files', function(done) {
+        fs.copyDirSync(path.join(root, 'empty'), copiedDirectory);
+        fs.rmDir(copiedDirectory, function(error) {
+            assert(!fs.existsSync(copiedDirectory), 'Copied directory still exists');
+
+            done();
+        });
+    });
+
+    test('synchronously recurses through a directory with no files', function() {
+        var anErrorHasOccurred = false;
+        try {
+            fs.recurseSync(path.join(root, 'empty'), function(file, stats) {});
+        } catch (error) {
+            anErrorHasOccurred = true;
+        }
+
+        assert(!anErrorHasOccurred, 'An error has occurred in asynchronously recursion with no files');
+    });
+
+    test('synchronously recurses through all files in a directory', function() {
+        var files = getAllFilesInDirectory(dir);
+        var rFiles = [];
+
+        fs.recurseSync(dir, function(file, stats) {
+            rFiles.push(file);
+        });
+
+        assert(rFiles.length === files.length, 'Recursive file count is unequal');
+        var i = 0;
+        var length = files.length;
+        for (; i < length; i++) {
+            assert(rFiles.indexOf(files[i]) !== -1, 'File not discovered via recursion ' + files[i]);
+        }
     });
 });

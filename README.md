@@ -7,11 +7,19 @@
 
 Extended functionality of fs with additional q-dependent promises adaptation of fs functions.
 
-Utilizes the [`q`](https://npmjs.org/package/q) and [`graceful-fs`](https://npmjs.org/package/graceful-fs) to implement missing features and augment existing functions.
+Utilizes the [`q`](https://npmjs.org/package/q), [`mkdirp`](https://npmjs.org/package/mkdirp), and [`graceful-fs`](https://npmjs.org/package/graceful-fs) to implement missing features and augment existing functions.
 
 Acts as a replacement fs for the existing fs, as it copies over existing functionality from fs. In addition to the standard functions available on [node's package `fs`](http://nodejs.org/api/fs.html), this includes functions to support copying and removing directories recursively. Leverages the [`q`](https://npmjs.org/package/q) package to introduce promise driven `fs` methods.
 
 # API
+
+## `extended-fs.recurse(dir, operation, callback)`
+
+Asynchronous recursive directory walk. Operation is performed on each file and provided a signature with the filepath and stats for the triggered file `operation(filepath, operation)`. No arguments other than a possible error are given to the callback.
+
+## `extended-fs.recurseSync(dir, operation)`
+
+Synchronous recursive directory walk.
 
 ## `extended-fs.rmDir(dir, callback)`
 
