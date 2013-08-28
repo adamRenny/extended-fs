@@ -40,6 +40,15 @@ var q = require('q');
  */
 var fsExtended = {
 
+    /**
+     * Walks through a directory asynchronously starting with the directory provided
+     * Passes the filename and its stats back to the operation
+     *
+     * @method recurse
+     * @param {string} dir Directory to traverse
+     * @param {function} operation Operation to perform on each file
+     * @param {function} callback Callback that accepts an error as the first param
+     */
     recurse: function(dir, operation, callback) {
         fs.readdir(dir, function(error, files) {
             if (error) {
@@ -55,6 +64,7 @@ var fsExtended = {
             for (; i < length; i++) {
                 // Capture scope
                 (function(file) {
+
                     counter++;
                     fs.stat(file, function(error, stats) {
                         if (error) {
@@ -89,8 +99,32 @@ var fsExtended = {
         });
     },
 
+    /**
+     * Walks through a directory synchronously starting with the directory provided
+     * Passes the filename and its stats back to the operation
+     *
+     * @method recurseSync
+     * @param {string} dir Directory to traverse
+     * @param {function} operation Operation to perform on each file
+     */
     recurseSync: function(dir, operation) {
+        var files = fs.readdirSync(dir);
 
+        var i = 0;
+        var length = files.length;
+        var file;
+        var stats;
+
+        for (; i < length; i++) {
+            file = path.join(dir, files[i]);
+            stats = fs.statSync(file);
+
+            operation(file, stats);
+
+            if (stats.isDirectory()) {
+                fsExtended.recurseSync(file, operation);
+            }
+        }
     },
 
     /**
