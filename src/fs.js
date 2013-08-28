@@ -40,6 +40,59 @@ var q = require('q');
  */
 var fsExtended = {
 
+    recurse: function(dir, operation, callback) {
+        fs.readdir(dir, function(error, files) {
+            if (error) {
+                callback(error);
+                return;
+            }
+
+            var i = 0;
+            var length = files.length;
+            var counter = 1;
+            var file;
+
+            for (; i < length; i++) {
+                // Capture scope
+                (function(file) {
+                    counter++;
+                    fs.stat(file, function(error, stats) {
+                        if (error) {
+                            callback(error);
+                            return;
+                        }
+
+                        operation(file, stats);
+
+                        if (stats.isDirectory()) {
+                            fsExtended.recurse(file, operation, onRecurseComplete);
+                        } else {
+                            onRecurseComplete(null);
+                        }
+                    });
+                }(path.join(dir, files[i])));
+            }
+
+            onRecurseComplete(null);
+
+            function onRecurseComplete(error) {
+                if (error) {
+                    callback(error, false);
+                    return;
+                }
+
+                counter--;
+                if (counter === 0) {
+                    callback(null, true);
+                }
+            }
+        });
+    },
+
+    recurseSync: function(dir, operation) {
+
+    },
+
     /**
      * Asynchronous recursive mkdir, mkdir -p
      *
@@ -128,13 +181,13 @@ var fsExtended = {
                     (function(dir, file) {
                         var filepath = path.join(dir, file);
 
+                        counter++;
                         fs.stat(filepath, function(error, stats) {
                             if (error) {
                                 callback(error);
                                 return;
                             }
 
-                            counter++;
                             if (stats.isDirectory()) {
                                 fsExtended.rmDir(filepath, onRemoveComplete);
                             } else {
@@ -142,6 +195,11 @@ var fsExtended = {
                             }
                         });
                     }(dir, files[i]));
+                }
+
+                // If nothing has been read, remove the directory
+                if (counter === 1) {
+                    fs.rmdir(dir, onRemoveComplete);
                 }
 
                 function onRemoveComplete(error) {
@@ -262,13 +320,13 @@ var fsExtended = {
                                     var srcpath = path.join(src, file);
                                     var destpath = path.join(dest, file);
 
+                                    counter++;
                                     fs.stat(srcpath, function(error, stats) {
                                         if (error) {
                                             callback(error);
                                             return;
                                         }
 
-                                        counter++;
                                         if (stats.isDirectory()) {
                                             fsExtended.copyDir(srcpath, destpath, onCopyComplete);
                                         } else {
@@ -276,6 +334,11 @@ var fsExtended = {
                                         }
                                     });
                                 }(src, dest, files[i]));
+                            }
+
+                            // Perform the callback if none have been copied
+                            if (counter === 0) {
+                                callback(null, true);
                             }
 
                             function onCopyComplete(error) {

@@ -247,4 +247,50 @@ suite('fs', function() {
             done();
         });
     });
+
+    test('recurses through all files of a directory', function(done) {
+        fs.recurse(dir, function(file, stats) {
+            
+        }, function(error) {
+            assert(!error, 'Recurse produces an error ' + error);
+
+            done();
+        });
+    });
+
+    test('recurses through a directory with no files', function(done) {
+        fs.recurse(path.join(root, 'empty'), function(file, stats) {
+
+        }, function(error) {
+            assert(!error, 'Recurse produces an error ' + error);
+
+            done();
+        });
+    });
+
+    test('asynchronously copies a directory with no files', function(done) {
+        fs.copyDir(path.join(root, 'empty'), copiedDirectory, function(error) {
+            assert(fs.existsSync(copiedDirectory), 'Copied directory does not exist');
+
+            fs.rmDirSync(copiedDirectory);
+
+            done();
+        });
+    });
+
+    test('synchronously copies a directory with no files', function() {
+        fs.copyDirSync(path.join(root, 'empty'), copiedDirectory);
+        assert(fs.existsSync(copiedDirectory), 'Copied directory does not exist');
+
+        fs.rmDirSync(copiedDirectory);
+    });
+
+    test('asynchronously removes a directory with no files', function(done) {
+        fs.copyDirSync(path.join(root, 'empty'), copiedDirectory);
+        fs.rmDir(copiedDirectory, function(error) {
+            assert(!fs.existsSync(copiedDirectory), 'Copied directory still exists');
+
+            done();
+        });
+    });
 });
