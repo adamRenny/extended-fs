@@ -1,5 +1,4 @@
 # extended-fs
-===========
 
 ## Usage ([node](http://nodejs.org))
 
@@ -15,7 +14,7 @@ Acts as a replacement fs for the existing fs, as it copies over existing functio
 
 ## `extended-fs.recurse(dir, operation, callback)`
 
-Asynchronous recursive directory walk. Operation is performed on each file and provided a signature with the filepath and stats for the triggered file `operation(filepath, operation)`. No arguments other than a possible error are given to the callback.
+Asynchronous recursive directory walk. Operation is performed on each file and provided a signature with the filepath and stats for the triggered file `operation(filepath, operation)`. If the supplied `operation` returns `false`, the recursion for that branch will stop. No arguments other than a possible error are given to the callback.
 
 ## `extended-fs.recurseSync(dir, operation)`
 

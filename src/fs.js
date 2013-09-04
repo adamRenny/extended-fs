@@ -43,10 +43,11 @@ var fsExtended = {
     /**
      * Walks through a directory asynchronously starting with the directory provided
      * Passes the filename and its stats back to the operation
+     * Cancels traversal if the operation returns false
      *
      * @method recurse
      * @param {string} dir Directory to traverse
-     * @param {function} operation Operation to perform on each file
+     * @param {function} operation Operation to perform on each file, if it returns false, the traversal will stop on that branch
      * @param {function} callback Callback that accepts an error as the first param
      */
     recurse: function(dir, operation, callback) {
@@ -60,8 +61,11 @@ var fsExtended = {
             var length = files.length;
             var counter = 1;
             var file;
+            var shouldTraverse;
 
             for (; i < length; i++) {
+                shouldTraverse = true;
+
                 // Capture scope
                 (function(file) {
 
@@ -72,10 +76,14 @@ var fsExtended = {
                             return;
                         }
 
-                        operation(file, stats);
+                        shouldTraverse = operation(file, stats);
 
                         if (stats.isDirectory()) {
-                            fsExtended.recurse(file, operation, onRecurseComplete);
+                            if (shouldTraverse !== false) {
+                                fsExtended.recurse(file, operation, onRecurseComplete);
+                            } else {
+                                onRecurseComplete(null);
+                            }
                         } else {
                             onRecurseComplete(null);
                         }
@@ -114,14 +122,16 @@ var fsExtended = {
         var length = files.length;
         var file;
         var stats;
+        var shouldTraverse;
 
         for (; i < length; i++) {
+            shouldTraverse = true;
             file = path.join(dir, files[i]);
             stats = fs.statSync(file);
 
-            operation(file, stats);
+            shouldTraverse = operation(file, stats);
 
-            if (stats.isDirectory()) {
+            if (stats.isDirectory() && shouldTraverse !== false) {
                 fsExtended.recurseSync(file, operation);
             }
         }
