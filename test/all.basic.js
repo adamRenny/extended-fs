@@ -351,4 +351,28 @@ suite('fs', function() {
             assert(rFiles.indexOf(files[i]) !== -1, 'File not discovered via recursion ' + files[i]);
         }
     });
+
+    test('cancels synchronous recursive search on the current branch if the operation returns false', function() {
+        var numberOfFilesInDir = fs.readdirSync(dir).length;
+        var numberOfTimes = 0;
+        fs.recurseSync(dir, function(file, stats) {
+            numberOfTimes++;
+            return false;
+        });
+
+        assert(numberOfTimes === numberOfFilesInDir, 'Recursive operation should have been performed only once, but was ' + numberOfTimes);
+    });
+
+    test('cancels asynchronous recursive search on the current branch if the operation returns false', function(done) {
+        var numberOfFilesInDir = fs.readdirSync(dir).length;
+        var numberOfTimes = 0;
+        fs.recurse(dir, function(file, stats) {
+            numberOfTimes++;
+            return false;
+        }, function(error) {
+            assert(!error, 'Recurse produces an error ' + error);
+            assert(numberOfTimes === numberOfFilesInDir, 'Recursive operation should have been performed only once, but was ' + numberOfTimes);
+            done();
+        });
+    });
 });
