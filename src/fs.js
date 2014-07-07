@@ -566,9 +566,6 @@ var fsExtended = {
                 defer.resolve.apply(defer, args);
             }
         };
-        try {
-            promiseFunction.name = methodName + 'Promise';
-        } catch (e) {}
 
         return promiseFunction;
     }
