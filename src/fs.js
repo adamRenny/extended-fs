@@ -328,6 +328,7 @@ var fsExtended = {
                     fs.stat(dest, function(error, stats) {
                         if (error) {
                             callback(error);
+                            return;
                         }
 
                         if (stats.isDirectory()) {
@@ -343,11 +344,13 @@ var fsExtended = {
                 function makeDestDir(error) {
                     if (error) {
                         callback(error);
+                        return;
                     }
 
                     fs.mkdir(dest, function(error) {
                         if (error) {
                             callback(error);
+                            return;
                         }
 
                         fs.readdir(src, function(error, files) {
