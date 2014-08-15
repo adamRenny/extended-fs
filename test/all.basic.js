@@ -1,15 +1,13 @@
 var assert = require('assert');
 var fs = require('../extended-fs');
 var path = require('path');
-require('buffertools');
+require('buffertools').extend();
 
 suite('fs', function() {
     var root = __dirname;
     var dir = path.join(root, 'tree');
     var copiedFilename = path.join(root, 'aCopy');
     var copiedDirectory = path.join(root, 'treeCopy');
-
-    console.log(dir, copiedFilename, copiedDirectory);
 
     function fileIsSameAsFile(filepathA, filepathB) {
         var contentsA = fs.readFileSync(filepathA);
